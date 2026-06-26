@@ -1,0 +1,165 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap');
+
+/* ==================== CSS 变量：暗色塔罗主题（默认） ==================== */
+:root,
+[data-theme="dark"] {
+  --bg-primary: #1a1410;
+  --bg-secondary: #1e1a14;
+  --bg-tertiary: #252018;
+  --bg-panel: rgba(20, 16, 12, 0.4);
+  --bg-panel-hover: rgba(30, 26, 20, 0.5);
+  --bg-overlay: rgba(0, 0, 0, 0.65);
+  --bg-header: rgba(26, 20, 16, 0.92);
+  --bg-input: rgba(20, 16, 12, 0.5);
+
+  --text-primary: #d4c5b2;
+  --text-secondary: rgba(180, 150, 120, 0.6);
+  --text-muted: rgba(180, 150, 120, 0.4);
+  --text-faint: rgba(180, 150, 120, 0.25);
+  --text-accent: #c9a96e;
+  --text-accent-hover: #d4b87a;
+  --text-accent-dim: rgba(201, 169, 110, 0.5);
+
+  --border-primary: rgba(180, 150, 120, 0.25);
+  --border-light: rgba(180, 150, 120, 0.12);
+  --border-lighter: rgba(180, 150, 120, 0.08);
+  --border-accent: rgba(201, 169, 110, 0.4);
+  --border-accent-light: rgba(180, 150, 120, 0.2);
+  --border-input: rgba(180, 150, 120, 0.15);
+
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 8px 30px rgba(180, 140, 80, 0.2);
+  --shadow-hero: 0 6px 30px rgba(0, 0, 0, 0.4);
+  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.5);
+
+  --card-gradient: linear-gradient(160deg, #1e1a14 0%, #252018 40%, #1e1a14 100%);
+  --card-gradient-alt: linear-gradient(135deg, #1a1618 0%, #221e1c 50%, #1a1618 100%);
+
+  --color-success: rgba(140, 180, 140, 0.6);
+  --color-success-dim: rgba(140, 180, 140, 0.3);
+  --color-danger: rgba(220, 100, 100, 0.8);
+  --color-danger-dim: rgba(180, 120, 120, 0.5);
+  --color-danger-bg: rgba(180, 120, 120, 0.1);
+  --color-danger-border: rgba(180, 120, 120, 0.2);
+
+  --scrollbar-track: #1a1410;
+  --scrollbar-thumb: #4a3a2a;
+
+  --selection-bg: rgba(201, 169, 110, 0.3);
+  --selection-text: #e8d5b0;
+
+  --btn-bg: rgba(180, 150, 120, 0.08);
+  --btn-bg-hover: rgba(180, 150, 120, 0.15);
+  --btn-bg-active: rgba(180, 150, 120, 0.18);
+
+  /* 花色强调色 */
+  --suit-fire: rgba(200, 120, 80, 0.35);
+  --suit-air: rgba(140, 170, 200, 0.35);
+  --suit-water: rgba(100, 150, 190, 0.35);
+  --suit-earth: rgba(140, 160, 120, 0.35);
+}
+
+/* ==================== CSS 变量：米色纸张主题 ==================== */
+[data-theme="light"] {
+  --bg-primary: #f5f0e8;
+  --bg-secondary: #faf7f2;
+  --bg-tertiary: #ede4d6;
+  --bg-panel: rgba(240, 235, 225, 0.85);
+  --bg-panel-hover: rgba(235, 228, 215, 0.9);
+  --bg-overlay: rgba(60, 45, 25, 0.5);
+  --bg-header: rgba(245, 240, 232, 0.94);
+  --bg-input: rgba(250, 247, 242, 0.8);
+
+  --text-primary: #3e3324;
+  --text-secondary: rgba(80, 60, 35, 0.65);
+  --text-muted: rgba(80, 60, 35, 0.4);
+  --text-faint: rgba(80, 60, 35, 0.2);
+  --text-accent: #8b6b3e;
+  --text-accent-hover: #6b4f2e;
+  --text-accent-dim: rgba(139, 107, 62, 0.5);
+
+  --border-primary: rgba(140, 110, 70, 0.3);
+  --border-light: rgba(140, 110, 70, 0.15);
+  --border-lighter: rgba(140, 110, 70, 0.08);
+  --border-accent: rgba(139, 107, 62, 0.45);
+  --border-accent-light: rgba(140, 110, 70, 0.2);
+  --border-input: rgba(140, 110, 70, 0.18);
+
+  --shadow-card: 0 2px 12px rgba(80, 50, 20, 0.08);
+  --shadow-card-hover: 0 8px 28px rgba(139, 107, 62, 0.18);
+  --shadow-hero: 0 6px 30px rgba(80, 50, 20, 0.12);
+  --shadow-modal: 0 20px 60px rgba(80, 50, 20, 0.2);
+
+  --card-gradient: linear-gradient(160deg, #faf7f2 0%, #f0eadc 40%, #faf7f2 100%);
+  --card-gradient-alt: linear-gradient(135deg, #f8f3eb 0%, #efe8da 50%, #f8f3eb 100%);
+
+  --color-success: rgba(80, 140, 80, 0.6);
+  --color-success-dim: rgba(80, 140, 80, 0.3);
+  --color-danger: rgba(190, 70, 70, 0.85);
+  --color-danger-dim: rgba(160, 80, 80, 0.55);
+  --color-danger-bg: rgba(180, 100, 100, 0.08);
+  --color-danger-border: rgba(180, 100, 100, 0.2);
+
+  --scrollbar-track: #f5f0e8;
+  --scrollbar-thumb: #c4b89a;
+
+  --selection-bg: rgba(139, 107, 62, 0.2);
+  --selection-text: #3e3324;
+
+  --btn-bg: rgba(140, 110, 70, 0.08);
+  --btn-bg-hover: rgba(140, 110, 70, 0.14);
+  --btn-bg-active: rgba(140, 110, 70, 0.18);
+
+  --suit-fire: rgba(190, 100, 60, 0.25);
+  --suit-air: rgba(100, 140, 180, 0.25);
+  --suit-water: rgba(70, 120, 170, 0.25);
+  --suit-earth: rgba(110, 140, 90, 0.25);
+}
+
+/* ==================== 全局重置 ==================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: 'Georgia', 'Noto Serif SC', 'STSong', serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.4s ease, color 0.4s ease;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+
+/* 选中文字 */
+::selection { background: var(--selection-bg); color: var(--selection-text); }
+
+a { color: var(--text-accent); text-decoration: none; transition: color 0.3s; }
+a:hover { color: var(--text-accent-hover); }
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: background 0.3s, color 0.3s, border-color 0.3s, opacity 0.3s;
+}
+
+input, textarea {
+  font-family: inherit;
+  color: var(--text-primary);
+}
