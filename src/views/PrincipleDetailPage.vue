@@ -54,7 +54,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePrinciples } from '../composables/useStorage.js'
 import RichEditor from '../components/RichEditor.vue'
@@ -85,6 +85,12 @@ function loadArticle() {
 
 onMounted(() => {
   loadArticle()
+  window.addEventListener('beforeunload', beforeUnloadSave)
+})
+
+onBeforeUnmount(() => {
+  saveToStorage()
+  window.removeEventListener('beforeunload', beforeUnloadSave)
 })
 
 watch(articleId, () => {
@@ -111,6 +117,14 @@ function saveToStorage() {
     content: articleContent.value,
   })
   saved.value = true
+  console.log('[塔罗原理] 已保存:', articleTitle.value)
+}
+
+// 页面离开前强制保存（防止内容丢失）
+function beforeUnloadSave() {
+  if (!saved.value && article.value) {
+    saveToStorage()
+  }
 }
 
 // 标题改变时也触发保存
