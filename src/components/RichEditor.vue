@@ -40,7 +40,7 @@ const props = defineProps({
   placeholder: { type: String, default: '在此书写笔记...' }
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'blur'])
 const isFocused = ref(false)
 
 const editor = useEditor({
@@ -75,6 +75,7 @@ const editor = useEditor({
     setTimeout(() => {
       if (!editor.view.hasFocus()) {
         isFocused.value = false
+        emit('blur')
       }
     }, 200)
   },

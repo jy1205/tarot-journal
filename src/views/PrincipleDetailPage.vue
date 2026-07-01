@@ -17,7 +17,6 @@
         class="title-input"
         v-model="articleTitle"
         placeholder="输入文章标题..."
-        @input="markDirty"
       />
     </div>
 
@@ -28,9 +27,10 @@
     <!-- 富文本编辑区 -->
     <div class="editor-section">
       <RichEditor
-        v-model="articleContent"
+        :modelValue="articleContent"
         placeholder="在此撰写塔罗原理文章..."
         @update:modelValue="onContentChange"
+        @blur="onEditorBlur"
       />
     </div>
 
@@ -85,51 +85,65 @@ function loadArticle() {
 
 onMounted(() => {
   loadArticle()
-  window.addEventListener('beforeunload', beforeUnloadSave)
 })
 
 onBeforeUnmount(() => {
-  saveToStorage()
-  window.removeEventListener('beforeunload', beforeUnloadSave)
+  // 组件卸载时立即保存，清除所有待执行的防抖
+  clearTimeout(saveTimer)
+  if (article.value && !saved.value) {
+    updatePrinciple(articleId.value, {
+      title: articleTitle.value.trim() || '未命名文章',
+      content: articleContent.value,
+    })
+    saved.value = true
+  }
 })
 
 watch(articleId, () => {
   loadArticle()
 })
 
-// 标记为未保存并延迟保存
-function onContentChange() {
-  markDirty()
-}
-
-function markDirty() {
+// 防抖保存：每次输入后 300ms 保存一次
+function onContentChange(newContent) {
+  if (!article.value) return
+  articleContent.value = newContent
   saved.value = false
   clearTimeout(saveTimer)
   saveTimer = setTimeout(() => {
-    saveToStorage()
-  }, 800)
+    doSave(newContent)
+  }, 300)
 }
 
-function saveToStorage() {
+function doSave(content) {
   if (!article.value) return
   updatePrinciple(articleId.value, {
     title: articleTitle.value.trim() || '未命名文章',
-    content: articleContent.value,
+    content: content || articleContent.value,
   })
   saved.value = true
-  console.log('[塔罗原理] 已保存:', articleTitle.value)
 }
 
-// 页面离开前强制保存（防止内容丢失）
-function beforeUnloadSave() {
-  if (!saved.value && article.value) {
-    saveToStorage()
+// 编辑器失焦时立即保存
+function onEditorBlur() {
+  clearTimeout(saveTimer)
+  if (article.value && !saved.value) {
+    doSave()
   }
 }
 
 // 标题改变时也触发保存
 watch(articleTitle, () => {
-  if (loaded.value) markDirty()
+  if (loaded.value && article.value) {
+    saved.value = false
+    clearTimeout(saveTimer)
+    saveTimer = setTimeout(() => {
+      updatePrinciple(articleId.value, {
+        title: articleTitle.value.trim() || '未命名文章',
+        content: articleContent.value,
+      })
+      saved.value = true
+    }, 300)
+  }
 })
 
 function handleDelete() {
