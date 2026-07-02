@@ -48,15 +48,16 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { usePrinciples } from '../composables/useStorage.js'
+import { usePrinciples, createPrinciple, savePrinciples } from '../composables/useStorage.js'
 
 const router = useRouter()
-const { principles, createPrinciple, deletePrinciple } = usePrinciples()
+const { principles, addPrinciple, deletePrinciple } = usePrinciples()
 
 function openNewArticle() {
-  const p = createPrinciple('新文章')
+  const p = addPrinciple('新文章')
+  // 立即写入 localStorage，确保即使详情页还没打开，数据也不丢
+  savePrinciples(principles.value)
   router.push(`/principles/${p.id}`)
 }
 

@@ -17,6 +17,7 @@
         class="title-input"
         v-model="articleTitle"
         placeholder="输入文章标题..."
+        @input="onTitleChange"
       />
     </div>
 
@@ -27,6 +28,7 @@
     <!-- 富文本编辑区 -->
     <div class="editor-section">
       <RichEditor
+        ref="editorRef"
         :modelValue="articleContent"
         placeholder="在此撰写塔罗原理文章..."
         @update:modelValue="onContentChange"
@@ -54,102 +56,91 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { usePrinciples } from '../composables/useStorage.js'
+import { loadPrinciples, savePrinciples } from '../composables/useStorage.js'
 import RichEditor from '../components/RichEditor.vue'
 
 const route = useRoute()
 const router = useRouter()
-const { principles, updatePrinciple, deletePrinciple, getPrinciple } = usePrinciples()
+const editorRef = ref(null)
 
-const articleId = computed(() => route.params.articleId)
-const article = computed(() => getPrinciple(articleId.value))
-
+const articleId = ref(route.params.articleId)
+const article = ref(null)
 const articleTitle = ref('')
 const articleContent = ref('')
 const saved = ref(true)
 const loaded = ref(false)
 let saveTimer = null
 
-// 加载文章内容
+// ========== 核心：直接从 localStorage 读取/写入，不依赖全局 ref ==========
+
+function readArticle(id) {
+  const all = loadPrinciples()
+  return all.find(p => p.id === id) || null
+}
+
+function writeArticle(id, title, content) {
+  const all = loadPrinciples()
+  const idx = all.findIndex(p => p.id === id)
+  if (idx === -1) return false
+  all[idx] = {
+    ...all[idx],
+    title,
+    content,
+    updatedAt: Date.now()
+  }
+  savePrinciples(all)
+  return true
+}
+
 function loadArticle() {
-  const a = article.value
+  const a = readArticle(articleId.value)
   if (a) {
+    article.value = a
     articleTitle.value = a.title || ''
     articleContent.value = a.content || ''
+  } else {
+    article.value = null
   }
   loaded.value = true
   saved.value = true
 }
 
-onMounted(() => {
-  loadArticle()
-})
-
-onBeforeUnmount(() => {
-  // 组件卸载时立即保存，清除所有待执行的防抖
+function flushSave() {
   clearTimeout(saveTimer)
   if (article.value && !saved.value) {
-    updatePrinciple(articleId.value, {
-      title: articleTitle.value.trim() || '未命名文章',
-      content: articleContent.value,
-    })
+    writeArticle(articleId.value, articleTitle.value.trim() || '未命名文章', articleContent.value)
     saved.value = true
   }
-})
+}
 
-watch(articleId, () => {
-  loadArticle()
-})
+// ========== 事件处理 ==========
 
-// 防抖保存：每次输入后 300ms 保存一次
+function onTitleChange() {
+  if (!loaded.value) return
+  saved.value = false
+  clearTimeout(saveTimer)
+  saveTimer = setTimeout(flushSave, 300)
+}
+
 function onContentChange(newContent) {
-  if (!article.value) return
+  if (!loaded.value) return
   articleContent.value = newContent
   saved.value = false
   clearTimeout(saveTimer)
-  saveTimer = setTimeout(() => {
-    doSave(newContent)
-  }, 300)
+  saveTimer = setTimeout(flushSave, 300)
 }
 
-function doSave(content) {
-  if (!article.value) return
-  updatePrinciple(articleId.value, {
-    title: articleTitle.value.trim() || '未命名文章',
-    content: content || articleContent.value,
-  })
-  saved.value = true
-}
-
-// 编辑器失焦时立即保存
 function onEditorBlur() {
-  clearTimeout(saveTimer)
-  if (article.value && !saved.value) {
-    doSave()
-  }
+  flushSave()
 }
-
-// 标题改变时也触发保存
-watch(articleTitle, () => {
-  if (loaded.value && article.value) {
-    saved.value = false
-    clearTimeout(saveTimer)
-    saveTimer = setTimeout(() => {
-      updatePrinciple(articleId.value, {
-        title: articleTitle.value.trim() || '未命名文章',
-        content: articleContent.value,
-      })
-      saved.value = true
-    }, 300)
-  }
-})
 
 function handleDelete() {
   const title = articleTitle.value || '这篇文章'
   if (confirm(`确定删除"${title}"？此操作不可恢复。`)) {
-    deletePrinciple(articleId.value)
+    const all = loadPrinciples()
+    savePrinciples(all.filter(p => p.id !== articleId.value))
     router.push('/principles')
   }
 }
@@ -159,6 +150,16 @@ function formatTime(ts) {
   const d = new Date(ts)
   return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
 }
+
+// ========== 生命周期 ==========
+
+onMounted(() => {
+  loadArticle()
+})
+
+onBeforeUnmount(() => {
+  flushSave()
+})
 </script>
 
 <style scoped>

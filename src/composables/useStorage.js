@@ -528,9 +528,7 @@ export function useCases() {
 
 // ==================== 塔罗原理文章系统 ====================
 
-let _principlesInstance = null
-
-function loadPrinciples() {
+export function loadPrinciples() {
   try {
     const raw = localStorage.getItem(PRINCIPLE_KEY)
     return raw ? JSON.parse(raw) : []
@@ -539,17 +537,33 @@ function loadPrinciples() {
   }
 }
 
-export function usePrinciples() {
-  if (_principlesInstance) return _principlesInstance
+export function savePrinciples(list) {
+  localStorage.setItem(PRINCIPLE_KEY, JSON.stringify(list))
+}
 
+export function createPrinciple(title = '新文章') {
+  const now = Date.now()
+  const colors = ['#8B6B4A', '#6B4E71', '#4A6B6B', '#7B5B3A', '#5B4A6B',
+                  '#4A5B6B', '#6B5B4A', '#3A5B5B', '#7A6B5A', '#5A6B7A']
+  return {
+    id: `pr_${now}_${Math.random().toString(36).slice(2, 6)}`,
+    title,
+    content: '',
+    createdAt: now,
+    updatedAt: now,
+    color: colors[Math.floor(Math.random() * colors.length)],
+  }
+}
+
+export function usePrinciples() {
   const principles = ref(loadPrinciples())
 
-  function savePrinciples() {
-    localStorage.setItem(PRINCIPLE_KEY, JSON.stringify(principles.value))
-  }
+  // 深度监听，自动保存
+  watch(principles, (val) => {
+    savePrinciples(val)
+  }, { deep: true })
 
-  watch(principles, () => savePrinciples(), { deep: true })
-
+  // 跨标签页同步
   if (typeof window !== 'undefined') {
     window.addEventListener('storage', (e) => {
       if (e.key === PRINCIPLE_KEY) {
@@ -562,24 +576,14 @@ export function usePrinciples() {
     })
   }
 
-  function createPrinciple(title = '新文章') {
-    const now = Date.now()
-    const colors = ['#8B6B4A', '#6B4E71', '#4A6B6B', '#7B5B3A', '#5B4A6B',
-                    '#4A5B6B', '#6B5B4A', '#3A5B5B', '#7A6B5A', '#5A6B7A']
-    const newPrinciple = {
-      id: `pr_${now}_${Math.random().toString(36).slice(2, 6)}`,
-      title,
-      content: '',
-      createdAt: now,
-      updatedAt: now,
-      color: colors[Math.floor(Math.random() * colors.length)],
-    }
-    principles.value.unshift(newPrinciple)
-    return newPrinciple
+  function addPrinciple(title = '新文章') {
+    const p = createPrinciple(title)
+    principles.value.unshift(p)
+    return p
   }
 
-  function updatePrinciple(principleId, updates) {
-    const idx = principles.value.findIndex(p => p.id === principleId)
+  function updatePrinciple(id, updates) {
+    const idx = principles.value.findIndex(p => p.id === id)
     if (idx !== -1) {
       principles.value[idx] = {
         ...principles.value[idx],
@@ -589,15 +593,13 @@ export function usePrinciples() {
     }
   }
 
-  function deletePrinciple(principleId) {
-    principles.value = principles.value.filter(p => p.id !== principleId)
+  function deletePrinciple(id) {
+    principles.value = principles.value.filter(p => p.id !== id)
   }
 
-  function getPrinciple(principleId) {
-    return principles.value.find(p => p.id === principleId) || null
+  function getPrinciple(id) {
+    return principles.value.find(p => p.id === id) || null
   }
 
-  const instance = { principles, createPrinciple, updatePrinciple, deletePrinciple, getPrinciple }
-  _principlesInstance = instance
-  return instance
+  return { principles, addPrinciple, updatePrinciple, deletePrinciple, getPrinciple }
 }
