@@ -226,9 +226,12 @@ export async function exportBackup() {
     exportedAtLocale: new Date().toLocaleString('zh-CN'),
     data: {},
     images: {},
-    notes: {},       // 每张牌的富文本笔记
-    cases: [],       // 案例集
-    principles: [],  // 塔罗原理
+    notes: {},          // 每张牌的富文本笔记
+    cases: [],          // 案例集
+    principles: [],     // 塔罗原理
+    inspirations: {},   // 灵感卡片
+    inspirationIcons: {}, // 灵感图标
+    astro: {},           // 占星落点
   }
 
   // 收集卡片数据
@@ -266,6 +269,24 @@ export async function exportBackup() {
     backup.principles = rawPrinciples ? JSON.parse(rawPrinciples) : []
   } catch { /* ignore */ }
 
+  // 收集灵感卡片
+  try {
+    const rawInsp = localStorage.getItem(INSPIRATION_KEY)
+    backup.inspirations = rawInsp ? JSON.parse(rawInsp) : {}
+  } catch { /* ignore */ }
+
+  // 收集灵感图标
+  try {
+    const rawIcons = localStorage.getItem(INSPIRATION_ICON_KEY)
+    backup.inspirationIcons = rawIcons ? JSON.parse(rawIcons) : {}
+  } catch { /* ignore */ }
+
+  // 收集占星落点
+  try {
+    const rawAstro = localStorage.getItem(ASTRO_KEY)
+    backup.astro = rawAstro ? JSON.parse(rawAstro) : {}
+  } catch { /* ignore */ }
+
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -285,7 +306,8 @@ export async function exportBackup() {
     imageCount: Object.keys(backup.images).length,
     noteCount: Object.keys(backup.notes).length,
     caseCount: backup.cases.length,
-    principleCount: backup.principles.length
+    principleCount: backup.principles.length,
+    inspirationCount: countInspirations(backup.inspirations),
   }
 }
 
@@ -388,6 +410,52 @@ export function importBackup(file, mode = 'merge') {
           }
         }
 
+        // 恢复灵感卡片
+        if (backup.inspirations && typeof backup.inspirations === 'object') {
+          if (mode === 'merge') {
+            try {
+              const existingInsp = JSON.parse(localStorage.getItem(INSPIRATION_KEY) || '{}')
+              const mergedInsp = { ...existingInsp }
+              Object.entries(backup.inspirations).forEach(([cardId, cards]) => {
+                if (Array.isArray(cards)) {
+                  mergedInsp[cardId] = mergedInsp[cardId]
+                    ? [...mergedInsp[cardId], ...cards.filter(c => !mergedInsp[cardId].find(e => e.id === c.id))]
+                    : cards
+                }
+              })
+              localStorage.setItem(INSPIRATION_KEY, JSON.stringify(mergedInsp))
+            } catch { /* ignore */ }
+          } else {
+            localStorage.setItem(INSPIRATION_KEY, JSON.stringify(backup.inspirations))
+          }
+        }
+
+        // 恢复灵感图标
+        if (backup.inspirationIcons && typeof backup.inspirationIcons === 'object') {
+          if (mode === 'merge') {
+            try {
+              const existingIcons = JSON.parse(localStorage.getItem(INSPIRATION_ICON_KEY) || '{}')
+              const mergedIcons = { ...existingIcons, ...backup.inspirationIcons }
+              localStorage.setItem(INSPIRATION_ICON_KEY, JSON.stringify(mergedIcons))
+            } catch { /* ignore */ }
+          } else {
+            localStorage.setItem(INSPIRATION_ICON_KEY, JSON.stringify(backup.inspirationIcons))
+          }
+        }
+
+        // 恢复占星落点
+        if (backup.astro && typeof backup.astro === 'object') {
+          if (mode === 'merge') {
+            try {
+              const existingAstro = JSON.parse(localStorage.getItem(ASTRO_KEY) || '{}')
+              const mergedAstro = { ...existingAstro, ...backup.astro }
+              localStorage.setItem(ASTRO_KEY, JSON.stringify(mergedAstro))
+            } catch { /* ignore */ }
+          } else {
+            localStorage.setItem(ASTRO_KEY, JSON.stringify(backup.astro))
+          }
+        }
+
         // 刷新内存中的图片
         try {
           sharedImages.value = await idbLoadAll()
@@ -415,6 +483,16 @@ export function importBackup(file, mode = 'merge') {
 }
 
 function countCards(data) {
+  let count = 0
+  if (data && typeof data === 'object') {
+    Object.values(data).forEach(arr => {
+      if (Array.isArray(arr)) count += arr.length
+    })
+  }
+  return count
+}
+
+function countInspirations(data) {
   let count = 0
   if (data && typeof data === 'object') {
     Object.values(data).forEach(arr => {
@@ -554,6 +632,123 @@ export function createPrinciple(title = '新文章') {
     color: colors[Math.floor(Math.random() * colors.length)],
   }
 }
+
+// ==================== Inspirations 灵感卡片系统 ====================
+
+const INSPIRATION_KEY = 'tarot-inspirations'
+const INSPIRATION_ICON_KEY = 'tarot-inspiration-icons'
+
+export function loadInspirations(cardId) {
+  try {
+    const raw = localStorage.getItem(INSPIRATION_KEY)
+    const all = raw ? JSON.parse(raw) : {}
+    return all[cardId] || []
+  } catch {
+    return []
+  }
+}
+
+export function saveInspirations(cardId, list) {
+  try {
+    const raw = localStorage.getItem(INSPIRATION_KEY)
+    const all = raw ? JSON.parse(raw) : {}
+    if (list.length > 0) {
+      all[cardId] = list
+    } else {
+      delete all[cardId]
+    }
+    localStorage.setItem(INSPIRATION_KEY, JSON.stringify(all))
+  } catch { /* ignore */ }
+}
+
+export function loadInspirationIcons() {
+  try {
+    const raw = localStorage.getItem(INSPIRATION_ICON_KEY)
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
+
+export function saveInspirationIcon(cardId, iconDataUrl) {
+  try {
+    const icons = loadInspirationIcons()
+    if (iconDataUrl) {
+      icons[cardId] = iconDataUrl
+    } else {
+      delete icons[cardId]
+    }
+    localStorage.setItem(INSPIRATION_ICON_KEY, JSON.stringify(icons))
+  } catch { /* ignore */ }
+}
+
+export function createInspiration(title = '新灵感') {
+  const now = Date.now()
+  return {
+    id: `insp_${now}_${Math.random().toString(36).slice(2, 6)}`,
+    title,
+    content: '',
+    createdAt: now,
+    updatedAt: now,
+  }
+}
+
+// ==================== 占星落点（行星 + 星座）====================
+
+const ASTRO_KEY = 'tarot-astro-placements'
+
+export function loadAstroPlacement(cardId) {
+  try {
+    const raw = localStorage.getItem(ASTRO_KEY)
+    const all = raw ? JSON.parse(raw) : {}
+    return all[cardId] || { planet: '', sign: '' }
+  } catch {
+    return { planet: '', sign: '' }
+  }
+}
+
+export function saveAstroPlacement(cardId, planet, sign) {
+  try {
+    const raw = localStorage.getItem(ASTRO_KEY)
+    const all = raw ? JSON.parse(raw) : {}
+    if (planet || sign) {
+      all[cardId] = { planet, sign }
+    } else {
+      delete all[cardId]
+    }
+    localStorage.setItem(ASTRO_KEY, JSON.stringify(all))
+  } catch { /* ignore */ }
+}
+
+// 占星选项数据
+export const PLANETS = [
+  { value: '', label: '— 选择行星 —' },
+  { value: 'mercury', label: '水星 Mercury' },
+  { value: 'venus', label: '金星 Venus' },
+  { value: 'earth', label: '地球 Earth' },
+  { value: 'mars', label: '火星 Mars' },
+  { value: 'jupiter', label: '木星 Jupiter' },
+  { value: 'saturn', label: '土星 Saturn' },
+  { value: 'uranus', label: '天王星 Uranus' },
+  { value: 'neptune', label: '海王星 Neptune' },
+  { value: 'pluto', label: '冥王星 Pluto' },
+]
+
+export const ZODIAC_SIGNS = [
+  { value: '', label: '— 选择星座 —' },
+  { value: 'aries', label: '白羊座 Aries' },
+  { value: 'taurus', label: '金牛座 Taurus' },
+  { value: 'gemini', label: '双子座 Gemini' },
+  { value: 'cancer', label: '巨蟹座 Cancer' },
+  { value: 'leo', label: '狮子座 Leo' },
+  { value: 'virgo', label: '处女座 Virgo' },
+  { value: 'libra', label: '天秤座 Libra' },
+  { value: 'scorpio', label: '天蝎座 Scorpio' },
+  { value: 'sagittarius', label: '射手座 Sagittarius' },
+  { value: 'capricorn', label: '摩羯座 Capricorn' },
+  { value: 'aquarius', label: '水瓶座 Aquarius' },
+  { value: 'pisces', label: '双鱼座 Pisces' },
+]
 
 export function usePrinciples() {
   const principles = ref(loadPrinciples())

@@ -32,27 +32,42 @@
         <h1 class="hero-name">{{ cardData.name }}</h1>
         <h2 class="hero-name-en">{{ cardData.nameEn }}</h2>
         <p class="hero-keyword" v-if="cardData.keyword">{{ cardData.keyword }}</p>
+        <p class="hero-astrology" v-if="cardData.astrology">{{ cardData.astrology }}</p>
         <div class="hero-meta" v-if="cardData.element">
           <span class="meta-tag">{{ cardData.element }}元素</span>
           <span class="meta-tag" v-if="cardData.suit">{{ cardData.suit }}</span>
         </div>
       </div>
+      <!-- Inspirations 灵感图标 — 右下角 -->
+      <div class="inspiration-entry">
+        <div
+          class="inspiration-icon-wrapper"
+          @click="showInspirations = true"
+          :title="inspirationCount > 0 ? `${inspirationCount} 个灵感` : '添加灵感'"
+        >
+          <img
+            v-if="inspirationIconSrc"
+            :src="inspirationIconSrc"
+            class="inspiration-icon-img"
+            alt="Inspirations"
+          />
+          <span v-else class="inspiration-icon-default">✦</span>
+          <span v-if="inspirationCount > 0" class="inspiration-badge">{{ inspirationCount }}</span>
+        </div>
+        <label class="inspiration-icon-upload" title="更换图标">
+          📷
+          <input type="file" accept="image/*" @change="onInspirationIconUpload" hidden />
+        </label>
+      </div>
     </div>
 
-    <!-- 笔记本编辑区 -->
+    <!-- 笔记编辑区 -->
     <div class="notebook-section">
-      <div class="notebook-header">
-        <h3>📖 笔记</h3>
-        <span class="auto-save-hint" v-if="saved">✓ 已保存</span>
-        <span class="auto-save-hint saving" v-else>保存中...</span>
-      </div>
-
       <RichEditor
         v-model="noteContent"
         placeholder="在此记录对这张牌的解读、笔记、感悟..."
         @update:modelValue="onContentChange"
       />
-
       <div class="notebook-footer">
         <span class="last-saved" v-if="lastSaved">
           最后保存：{{ lastSaved }}
@@ -62,6 +77,13 @@
         </button>
       </div>
     </div>
+
+    <!-- Inspirations 弹窗 -->
+    <InspirationsModal
+      v-if="showInspirations"
+      :card-id="cardId"
+      @close="onInspirationsClose"
+    />
   </div>
 
   <div class="not-found" v-else>
@@ -78,6 +100,8 @@ import { useCardData, useCustomImages } from '../composables/useStorage.js'
 import { getCardImage } from '../data/cardImages.js'
 import { compressImage } from '../utils/imageCompress.js'
 import RichEditor from '../components/RichEditor.vue'
+import InspirationsModal from '../components/InspirationsModal.vue'
+import { loadInspirations, loadInspirationIcons, saveInspirationIcon } from '../composables/useStorage.js'
 
 const route = useRoute()
 const cardId = computed(() => route.params.cardId)
@@ -148,8 +172,38 @@ const customImage = computed(() => images.value[cardId.value] || null)
 const hasCustomImage = computed(() => !!customImage.value)
 const generatedImage = ref('')
 
+// Inspirations 状态
+const showInspirations = ref(false)
+const inspirationCount = ref(0)
+const inspirationIconSrc = ref('')
+
+function loadInspirationState() {
+  const list = loadInspirations(cardId.value)
+  inspirationCount.value = list.length
+  const icons = loadInspirationIcons()
+  inspirationIconSrc.value = icons[cardId.value] || ''
+}
+
+async function onInspirationIconUpload(e) {
+  const file = e.target.files[0]
+  if (!file) return
+  try {
+    const dataUrl = await compressImage(file, { maxWidth: 200, maxHeight: 200, quality: 0.6 })
+    saveInspirationIcon(cardId.value, dataUrl)
+    inspirationIconSrc.value = dataUrl
+  } catch {
+    alert('图标上传失败')
+  }
+}
+
+function onInspirationsClose() {
+  showInspirations.value = false
+  loadInspirationState()
+}
+
 onMounted(() => {
   loadNote()
+  loadInspirationState()
   setTimeout(() => {
     if (cardData.value) {
       try {
@@ -161,6 +215,7 @@ onMounted(() => {
 
 watch(cardId, () => {
   loadNote()
+  loadInspirationState()
   generatedImage.value = ''
   setTimeout(() => {
     if (cardData.value) {
@@ -271,10 +326,96 @@ function removeCustomImage() {
   margin-bottom: 30px;
   padding-bottom: 24px;
   border-bottom: 1px solid var(--border-light);
+  position: relative;
 }
 
 .hero-visual {
   flex-shrink: 0;
+}
+
+/* Inspirations 入口 — 右下角绝对定位 */
+.inspiration-entry {
+  position: absolute;
+  right: 0;
+  bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.inspiration-icon-wrapper {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border-accent-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  background: var(--bg-panel);
+  overflow: hidden;
+}
+
+.inspiration-icon-wrapper:hover {
+  border-color: var(--border-accent);
+  box-shadow: 0 0 12px rgba(201, 169, 110, 0.15);
+  transform: scale(1.05);
+}
+
+.inspiration-icon-default {
+  font-size: 1.2rem;
+  color: var(--text-accent-dim);
+  transition: color 0.3s;
+}
+
+.inspiration-icon-wrapper:hover .inspiration-icon-default {
+  color: var(--text-accent);
+}
+
+.inspiration-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.inspiration-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--text-accent);
+  color: var(--bg-primary);
+  font-size: 0.6rem;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.inspiration-icon-upload {
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 3px 5px;
+  border-radius: 3px;
+  background: var(--btn-bg);
+  color: var(--text-muted);
+  transition: all 0.3s;
+  opacity: 0;
+}
+
+.inspiration-entry:hover .inspiration-icon-upload {
+  opacity: 1;
+}
+
+.inspiration-icon-upload:hover {
+  background: var(--btn-bg-hover);
+  color: var(--text-accent);
 }
 
 .hero-card {
@@ -293,6 +434,9 @@ function removeCustomImage() {
 
 .hero-info {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .hero-name {
@@ -311,6 +455,14 @@ function removeCustomImage() {
 }
 
 .hero-keyword {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 12px;
+  margin-bottom: 0;
+  letter-spacing: 0.06em;
+}
+
+.hero-astrology {
   font-size: 0.82rem;
   color: var(--text-muted);
   margin-top: 12px;
@@ -333,44 +485,14 @@ function removeCustomImage() {
 
 /* 笔记本区域 */
 .notebook-section {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-lighter);
-  border-radius: 6px;
-  padding: 0;
-  overflow: hidden;
-  transition: background 0.4s ease, border-color 0.4s ease;
-}
-
-.notebook-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--border-lighter);
-  background: var(--bg-panel-hover);
-}
-
-.notebook-header h3 {
-  font-size: 0.9rem;
-  font-weight: normal;
-  color: var(--text-accent);
-  letter-spacing: 0.06em;
-}
-
-.auto-save-hint {
-  font-size: 0.72rem;
-  color: var(--color-success);
-}
-.auto-save-hint.saving {
-  color: var(--text-muted);
+  /* 去掉大框，编辑器自带边框 */
 }
 
 .notebook-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 20px;
-  border-top: 1px solid var(--border-lighter);
+  padding: 8px 4px;
 }
 
 .last-saved {
