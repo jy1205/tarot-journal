@@ -23,16 +23,42 @@
               title="删除此卡片"
             >✕</button>
 
-            <!-- 卡片面 — 可编辑 -->
+            <!-- 卡片面 -->
             <div class="card-face">
-              <span class="card-number">{{ idx + 1 }}</span>
-              <textarea
-                class="card-input"
-                v-model="card.content"
-                placeholder="写下灵感..."
-                @input="onCardChange"
-                @click.stop
-              ></textarea>
+              <!-- 日期行 -->
+              <div class="card-date-row">
+                <input
+                  type="date"
+                  class="card-date"
+                  v-model="card.date"
+                  @input="onCardChange"
+                  @click.stop
+                />
+              </div>
+
+              <!-- 每日灵感 -->
+              <div class="card-section">
+                <span class="section-label">每日灵感</span>
+                <textarea
+                  class="card-input"
+                  v-model="card.morning"
+                  placeholder="今天感受到的灵感..."
+                  @input="onCardChange"
+                  @click.stop
+                ></textarea>
+              </div>
+
+              <!-- 夜间复盘 -->
+              <div class="card-section">
+                <span class="section-label">夜间复盘</span>
+                <textarea
+                  class="card-input"
+                  v-model="card.evening"
+                  placeholder="夜晚回顾今天的感悟..."
+                  @input="onCardChange"
+                  @click.stop
+                ></textarea>
+              </div>
             </div>
           </div>
 
@@ -40,6 +66,7 @@
           <div class="float-card add-card" @click="addCard">
             <div class="card-face add-face">
               <span class="add-icon">+</span>
+              <span class="add-text">新的一天</span>
             </div>
           </div>
         </div>
@@ -48,11 +75,11 @@
         <div v-else class="empty-state">
           <div class="empty-card" @click="addCard">
             <span class="add-icon">+</span>
-            <p class="empty-text">添加灵感卡片</p>
+            <p class="empty-text">开始记录 Everyday Inspiration</p>
           </div>
         </div>
 
-        <!-- 底部轻量信息 -->
+        <!-- 底部信息 -->
         <div class="stage-footer" v-if="cards.length > 0">
           <span class="footer-info">{{ activeIndex + 1 }} / {{ cards.length }}</span>
         </div>
@@ -164,13 +191,14 @@ function close() {
   to { opacity: 1; }
 }
 
-/* 舞台 — 无外框，居中排列 */
+/* 舞台 — 更大区域 */
 .modal-stage {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 20px;
-  max-width: 90vw;
+  max-width: 95vw;
+  width: 700px;
 }
 
 /* 卡片轨道 */
@@ -183,7 +211,9 @@ function close() {
   scroll-behavior: smooth;
   cursor: grab;
   align-items: center;
-  min-height: 260px;
+  min-height: 420px;
+  width: 100%;
+  justify-content: flex-start;
 }
 
 .cards-track::-webkit-scrollbar {
@@ -194,10 +224,10 @@ function close() {
   cursor: grabbing;
 }
 
-/* ========== 3D 悬浮卡片 — 手札风格 ========== */
+/* ========== 3D 悬浮卡片 — 变大 ========== */
 .float-card {
-  flex: 0 0 180px;
-  height: 240px;
+  flex: 0 0 320px;
+  height: 420px;
   scroll-snap-align: center;
   position: relative;
   cursor: pointer;
@@ -235,12 +265,11 @@ function close() {
 .card-face {
   width: 100%;
   height: 100%;
-  border-radius: 12px;
+  border-radius: 14px;
   display: flex;
   flex-direction: column;
-  align-items: center;
   position: relative;
-  padding: 16px 14px;
+  padding: 20px 18px;
 
   /* 米色纸张渐变 */
   background: linear-gradient(
@@ -283,15 +312,55 @@ function close() {
     inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
-/* 卡片编号 */
-.card-number {
-  font-size: 1.6rem;
-  font-weight: 300;
-  color: rgba(139, 107, 62, 0.3);
-  letter-spacing: 0.04em;
-  line-height: 1;
-  margin-bottom: 10px;
+/* 日期行 */
+.card-date-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 14px;
   flex-shrink: 0;
+}
+
+.card-date {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: #5a4a36;
+  letter-spacing: 0.08em;
+  text-align: center;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.card-date:hover {
+  background: rgba(139, 107, 62, 0.08);
+}
+
+.card-date::-webkit-calendar-picker-indicator {
+  opacity: 0.4;
+  cursor: pointer;
+}
+
+/* 分区 */
+.card-section {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  margin-bottom: 6px;
+}
+
+.section-label {
+  font-size: 0.65rem;
+  color: rgba(139, 107, 62, 0.45);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  flex-shrink: 0;
+  padding-left: 2px;
 }
 
 /* 文字输入区域 */
@@ -303,8 +372,8 @@ function close() {
   outline: none;
   background: transparent;
   font-family: inherit;
-  font-size: 0.75rem;
-  line-height: 1.75;
+  font-size: 0.78rem;
+  line-height: 1.8;
   color: #3e3324;
   letter-spacing: 0.04em;
   resize: none;
@@ -312,7 +381,7 @@ function close() {
 }
 
 .card-input::placeholder {
-  color: rgba(139, 107, 62, 0.3);
+  color: rgba(139, 107, 62, 0.25);
   font-style: italic;
 }
 
@@ -330,13 +399,13 @@ function close() {
   top: 8px;
   right: 8px;
   z-index: 3;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   border: 1px solid rgba(139, 107, 62, 0.15);
   background: rgba(240, 235, 225, 0.8);
   color: rgba(139, 107, 62, 0.4);
-  font-size: 0.6rem;
+  font-size: 0.65rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -355,7 +424,7 @@ function close() {
   color: #fff;
 }
 
-/* ========== 添加卡片 — 虚线边框 ========== */
+/* ========== 添加卡片 ========== */
 .add-card .card-face {
   background: linear-gradient(
     160deg,
@@ -381,17 +450,25 @@ function close() {
 
 .add-face {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 10px;
   padding: 0;
 }
 
 .add-icon {
-  font-size: 2.2rem;
+  font-size: 2.6rem;
   color: rgba(139, 107, 62, 0.25);
   font-weight: 200;
   line-height: 1;
   transition: all 0.3s ease;
+}
+
+.add-text {
+  font-size: 0.72rem;
+  color: rgba(139, 107, 62, 0.3);
+  letter-spacing: 0.08em;
 }
 
 .add-card:hover .add-icon {
@@ -399,25 +476,30 @@ function close() {
   transform: scale(1.15);
 }
 
+.add-card:hover .add-text {
+  color: rgba(139, 107, 62, 0.5);
+}
+
 /* ========== 空状态 ========== */
 .empty-state {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 280px;
+  min-height: 420px;
+  width: 100%;
 }
 
 .empty-card {
-  width: 180px;
-  height: 240px;
-  border-radius: 12px;
+  width: 320px;
+  height: 420px;
+  border-radius: 14px;
   border: 1.5px dashed rgba(139, 107, 62, 0.3);
   background: rgba(245, 240, 232, 0.4);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 14px;
   cursor: pointer;
   transition: all 0.4s ease;
 }
@@ -431,7 +513,7 @@ function close() {
 }
 
 .empty-card .add-icon {
-  font-size: 2.2rem;
+  font-size: 2.6rem;
   color: rgba(139, 107, 62, 0.25);
 }
 
@@ -441,7 +523,7 @@ function close() {
 }
 
 .empty-text {
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   color: rgba(139, 107, 62, 0.3);
   letter-spacing: 0.08em;
 }
@@ -458,18 +540,22 @@ function close() {
   letter-spacing: 0.1em;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 700px) {
   .float-card {
-    flex: 0 0 140px;
-    height: 200px;
+    flex: 0 0 260px;
+    height: 380px;
   }
   .cards-track {
     gap: 16px;
     padding: 16px 24px;
+    min-height: 380px;
   }
   .empty-card {
-    width: 140px;
-    height: 200px;
+    width: 260px;
+    height: 380px;
+  }
+  .modal-stage {
+    width: 100%;
   }
 }
 </style>

@@ -38,26 +38,11 @@
           <span class="meta-tag" v-if="cardData.suit">{{ cardData.suit }}</span>
         </div>
       </div>
-      <!-- Inspirations 灵感图标 — 右下角 -->
-      <div class="inspiration-entry">
-        <div
-          class="inspiration-icon-wrapper"
-          @click="showInspirations = true"
-          :title="inspirationCount > 0 ? `${inspirationCount} 个灵感` : '添加灵感'"
-        >
-          <img
-            v-if="inspirationIconSrc"
-            :src="inspirationIconSrc"
-            class="inspiration-icon-img"
-            alt="Inspirations"
-          />
-          <span v-else class="inspiration-icon-default">✦</span>
-          <span v-if="inspirationCount > 0" class="inspiration-badge">{{ inspirationCount }}</span>
-        </div>
-        <label class="inspiration-icon-upload" title="更换图标">
-          📷
-          <input type="file" accept="image/*" @change="onInspirationIconUpload" hidden />
-        </label>
+      <!-- Everyday Inspiration 入口 — 右下角 -->
+      <div class="inspiration-entry" @click="showInspirations = true">
+        <span class="inspiration-star">✦</span>
+        <span class="inspiration-label">Everyday Inspiration</span>
+        <span v-if="inspirationCount > 0" class="inspiration-badge">{{ inspirationCount }}</span>
       </div>
     </div>
 
@@ -101,7 +86,7 @@ import { getCardImage } from '../data/cardImages.js'
 import { compressImage } from '../utils/imageCompress.js'
 import RichEditor from '../components/RichEditor.vue'
 import InspirationsModal from '../components/InspirationsModal.vue'
-import { loadInspirations, loadInspirationIcons, saveInspirationIcon } from '../composables/useStorage.js'
+import { loadInspirations } from '../composables/useStorage.js'
 
 const route = useRoute()
 const cardId = computed(() => route.params.cardId)
@@ -172,28 +157,13 @@ const customImage = computed(() => images.value[cardId.value] || null)
 const hasCustomImage = computed(() => !!customImage.value)
 const generatedImage = ref('')
 
-// Inspirations 状态
+// Everyday Inspiration 状态
 const showInspirations = ref(false)
 const inspirationCount = ref(0)
-const inspirationIconSrc = ref('')
 
 function loadInspirationState() {
   const list = loadInspirations(cardId.value)
   inspirationCount.value = list.length
-  const icons = loadInspirationIcons()
-  inspirationIconSrc.value = icons[cardId.value] || ''
-}
-
-async function onInspirationIconUpload(e) {
-  const file = e.target.files[0]
-  if (!file) return
-  try {
-    const dataUrl = await compressImage(file, { maxWidth: 200, maxHeight: 200, quality: 0.6 })
-    saveInspirationIcon(cardId.value, dataUrl)
-    inspirationIconSrc.value = dataUrl
-  } catch {
-    alert('图标上传失败')
-  }
 }
 
 function onInspirationsClose() {
@@ -333,89 +303,63 @@ function removeCustomImage() {
   flex-shrink: 0;
 }
 
-/* Inspirations 入口 — 右下角绝对定位 */
+/* Everyday Inspiration 入口 — 右下角 */
 .inspiration-entry {
   position: absolute;
   right: 0;
   bottom: 24px;
   display: flex;
   align-items: center;
-  gap: 6px;
-}
-
-.inspiration-icon-wrapper {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 1px solid var(--border-accent-light);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  gap: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
+  padding: 6px 14px 6px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border-accent-light);
   background: var(--bg-panel);
-  overflow: hidden;
+  transition: all 0.35s ease;
 }
 
-.inspiration-icon-wrapper:hover {
+.inspiration-entry:hover {
   border-color: var(--border-accent);
-  box-shadow: 0 0 12px rgba(201, 169, 110, 0.15);
-  transform: scale(1.05);
+  box-shadow: 0 0 16px rgba(201, 169, 110, 0.18);
+  transform: translateY(-2px);
 }
 
-.inspiration-icon-default {
-  font-size: 1.2rem;
+.inspiration-star {
+  font-size: 1rem;
   color: var(--text-accent-dim);
   transition: color 0.3s;
+  line-height: 1;
 }
 
-.inspiration-icon-wrapper:hover .inspiration-icon-default {
+.inspiration-entry:hover .inspiration-star {
   color: var(--text-accent);
 }
 
-.inspiration-icon-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
+.inspiration-label {
+  font-size: 0.72rem;
+  color: var(--text-accent-dim);
+  letter-spacing: 0.06em;
+  transition: color 0.3s;
+}
+
+.inspiration-entry:hover .inspiration-label {
+  color: var(--text-accent);
 }
 
 .inspiration-badge {
-  position: absolute;
-  top: -4px;
-  right: -4px;
   background: var(--text-accent);
   color: var(--bg-primary);
   font-size: 0.6rem;
-  width: 18px;
+  min-width: 18px;
   height: 18px;
-  border-radius: 50%;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
   line-height: 1;
-}
-
-.inspiration-icon-upload {
-  cursor: pointer;
-  font-size: 0.7rem;
-  padding: 3px 5px;
-  border-radius: 3px;
-  background: var(--btn-bg);
-  color: var(--text-muted);
-  transition: all 0.3s;
-  opacity: 0;
-}
-
-.inspiration-entry:hover .inspiration-icon-upload {
-  opacity: 1;
-}
-
-.inspiration-icon-upload:hover {
-  background: var(--btn-bg-hover);
-  color: var(--text-accent);
+  padding: 0 5px;
 }
 
 .hero-card {

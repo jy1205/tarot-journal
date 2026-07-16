@@ -682,12 +682,14 @@ export function saveInspirationIcon(cardId, iconDataUrl) {
   } catch { /* ignore */ }
 }
 
-export function createInspiration(title = '新灵感') {
+export function createInspiration() {
   const now = Date.now()
+  const today = new Date().toISOString().slice(0, 10)
   return {
     id: `insp_${now}_${Math.random().toString(36).slice(2, 6)}`,
-    title,
-    content: '',
+    date: today,
+    morning: '',
+    evening: '',
     createdAt: now,
     updatedAt: now,
   }
