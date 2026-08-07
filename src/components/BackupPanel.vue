@@ -10,6 +10,11 @@
             </div>
 
             <div class="panel-body">
+              <!-- 云端同步 -->
+              <CloudSyncPanel />
+
+              <div class="divider"></div>
+
               <!-- 当前数据概况 -->
               <div class="info-section">
                 <div class="info-row">
@@ -111,6 +116,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { exportBackup, importBackup, getLastBackupTime } from '../composables/useStorage.js'
+import CloudSyncPanel from './CloudSyncPanel.vue'
 
 const props = defineProps({
   visible: { type: Boolean, default: false }

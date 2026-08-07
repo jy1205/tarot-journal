@@ -87,6 +87,7 @@ import { compressImage } from '../utils/imageCompress.js'
 import RichEditor from '../components/RichEditor.vue'
 import InspirationsModal from '../components/InspirationsModal.vue'
 import { loadInspirations } from '../composables/useStorage.js'
+import { scheduleCloudSync } from '../composables/useCloudSync.js'
 
 const route = useRoute()
 const cardId = computed(() => route.params.cardId)
@@ -132,6 +133,7 @@ function saveNote() {
     }
     saved.value = true
     updateLastSaved()
+    scheduleCloudSync()
   } catch {
     // localStorage 满了
   }
@@ -148,6 +150,7 @@ function clearNote() {
     const key = NOTE_PREFIX + cardId.value
     localStorage.removeItem(key)
     saved.value = true
+    scheduleCloudSync()
   }
 }
 

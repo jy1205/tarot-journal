@@ -1,4 +1,5 @@
 import { ref, watch } from 'vue'
+import { scheduleCloudSync } from './useCloudSync.js'
 
 const STORAGE_KEY = 'tarot-app-data'
 const IMAGE_KEY = 'tarot-custom-images'
@@ -17,6 +18,7 @@ function loadAll() {
 
 function saveAll(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+  scheduleCloudSync()
 }
 
 // 全局共享实例
@@ -462,6 +464,7 @@ export function importBackup(file, mode = 'merge') {
         } catch { /* ignore */ }
 
         localStorage.setItem(BACKUP_META_KEY, Date.now().toString())
+        scheduleCloudSync()
 
         resolve({
           success: true,
@@ -536,6 +539,7 @@ export function useCases() {
 
   function saveCases() {
     localStorage.setItem(CASE_KEY, JSON.stringify(cases.value))
+    scheduleCloudSync()
   }
 
   // 深度监听，自动保存到 localStorage
@@ -617,6 +621,7 @@ export function loadPrinciples() {
 
 export function savePrinciples(list) {
   localStorage.setItem(PRINCIPLE_KEY, JSON.stringify(list))
+  scheduleCloudSync()
 }
 
 export function createPrinciple(title = '新文章') {
@@ -658,6 +663,7 @@ export function saveInspirations(cardId, list) {
       delete all[cardId]
     }
     localStorage.setItem(INSPIRATION_KEY, JSON.stringify(all))
+    scheduleCloudSync()
   } catch { /* ignore */ }
 }
 
@@ -679,6 +685,7 @@ export function saveInspirationIcon(cardId, iconDataUrl) {
       delete icons[cardId]
     }
     localStorage.setItem(INSPIRATION_ICON_KEY, JSON.stringify(icons))
+    scheduleCloudSync()
   } catch { /* ignore */ }
 }
 
@@ -719,6 +726,7 @@ export function saveAstroPlacement(cardId, planet, sign) {
       delete all[cardId]
     }
     localStorage.setItem(ASTRO_KEY, JSON.stringify(all))
+    scheduleCloudSync()
   } catch { /* ignore */ }
 }
 

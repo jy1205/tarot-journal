@@ -22,7 +22,7 @@
       </router-view>
     </main>
     <footer class="app-footer">
-      <span>✦ 所有数据即时保存在浏览器本地 ✦</span>
+      <span>✦ 所有数据即时保存在浏览器本地 <template v-if="cloudReady">· ☁ 已开启云端同步</template><template v-else>· ☁ 云端同步未登录</template> ✦</span>
     </footer>
 
     <BackupPanel
@@ -37,10 +37,19 @@
 import { ref, computed } from 'vue'
 import BackupPanel from './components/BackupPanel.vue'
 import { useTheme } from './composables/useTheme.js'
+import { initCloudSync, isLoggedIn, onAuthChange } from './composables/useCloudSync.js'
 
 const showBackup = ref(false)
 const { theme, toggleTheme } = useTheme()
 const isDark = computed(() => theme.value === 'dark')
+const cloudReady = ref(false)
+
+// 启动时恢复云端会话
+initCloudSync()
+cloudReady.value = isLoggedIn()
+onAuthChange((s) => {
+  cloudReady.value = !!(s && s.access_token)
+})
 
 function onDataChanged() {
   window.location.reload()
