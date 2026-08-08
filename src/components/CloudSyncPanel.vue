@@ -68,7 +68,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
   isLoggedIn, getSessionEmail, signIn, signUp, signOut,
-  syncNow, pullAllFromCloud, onAuthChange, getSession
+  syncNow, pullAllFromCloud, syncBothWays, onAuthChange, getSession
 } from '../composables/useCloudSync.js'
 
 const loggedIn = ref(isLoggedIn())
@@ -97,9 +97,13 @@ async function doLogin() {
   busy.value = true
   try {
     await signIn(email.value, password.value)
-    showMsg('登录成功！正在同步数据...', 'success')
-    await syncNow()
-    showMsg('登录成功，本地数据已同步到云端')
+    showMsg('登录成功！正在双向同步数据...', 'success')
+    const res = await syncBothWays()
+    if (res && res.success) {
+      showMsg(`登录成功！已双向同步（拉取 ${res.pulled} 项，推送 ${res.pushed} 项）`)
+    } else {
+      showMsg('登录成功！本地数据已同步')
+    }
   } catch (e) {
     showMsg('登录失败：' + e.message, 'error')
   }
@@ -121,8 +125,9 @@ async function doRegister() {
     if (result.needsEmailConfirm) {
       showMsg('注册成功！请到邮箱点击确认链接后，再回来登录', 'error')
     } else {
-      showMsg('注册成功！已自动登录并同步数据')
-      await syncNow()
+      showMsg('注册成功！正在双向同步数据...')
+      const res = await syncBothWays()
+      showMsg(res && res.success ? `注册成功！已双向同步（拉取 ${res.pulled} 项，推送 ${res.pushed} 项）` : '注册成功！已自动登录并同步数据')
     }
   } catch (e) {
     showMsg('注册失败：' + e.message, 'error')

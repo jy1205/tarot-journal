@@ -195,6 +195,21 @@ export async function pullAllFromCloud() {
   return { success: true, pulled: applied }
 }
 
+// 双向同步：先拉取云端（合并到本地），再推送本地（含刚拉取的数据）到云端
+// 这样无论哪边有更新，两边最终一致；按 key 粒度合并，同名 key 以云端为准
+export async function syncBothWays() {
+  if (!isLoggedIn()) return { success: false, error: '未登录，无法同步' }
+  let pulled = 0
+  let pushed = 0
+  try {
+    const pullRes = await pullAllFromCloud()
+    if (pullRes.success) pulled = pullRes.pulled
+  } catch { /* 拉取失败不阻断推送 */ }
+  const pushRes = await pushAllToCloud()
+  if (pushRes.success) pushed = pushRes.pushed
+  return { success: true, pulled, pushed }
+}
+
 // 防抖自动同步（本地写操作后调用）
 let syncTimer = null
 let pendingResolver = null
