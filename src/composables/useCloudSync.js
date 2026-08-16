@@ -59,16 +59,24 @@ loadSession()
 // ---------------- 基础请求 ----------------
 
 async function request(path, { method = 'GET', body, token, headers = {} } = {}) {
-  const res = await fetch(SUPABASE_URL + path, {
+  const doFetch = (t) => fetch(SUPABASE_URL + path, {
     method,
     headers: {
       apikey: SUPABASE_PUBLISHABLE_KEY,
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(t ? { Authorization: `Bearer ${t}` } : {}),
       ...headers,
     },
     body: body ? JSON.stringify(body) : undefined,
   })
+  let res = await doFetch(token)
+  // access_token 过期（401）：用 refresh_token 续期后重试一次（refresh 请求本身除外）
+  if (res.status === 401 && token && !path.includes('/auth/v1/token')) {
+    const ok = await ensureFreshToken()
+    if (ok && session) {
+      res = await doFetch(session.access_token)
+    }
+  }
   const text = await res.text()
   let data = null
   try { data = text ? JSON.parse(text) : null } catch { data = text }
@@ -90,7 +98,7 @@ export async function signUp(email, password) {
   })
   // 若项目开启了邮箱确认，signup 不会返回 access_token
   if (data && data.access_token) {
-    saveSession(data)
+    saveSession(stampExpiry(data))
     scheduleTokenRefresh(data)
     return { ...data, needsEmailConfirm: false }
   }
@@ -102,7 +110,7 @@ export async function signIn(email, password) {
     method: 'POST',
     body: { email, password },
   })
-  saveSession(data)
+  saveSession(stampExpiry(data))
   scheduleTokenRefresh(data)
   return data
 }
@@ -117,21 +125,55 @@ export async function signOut() {
   clearTokenRefresh()
 }
 
-// 刷新会话（access_token 过期前自动续期）
-function scheduleTokenRefresh(sess) {
-  clearTokenRefresh()
-  if (!sess || !sess.expires_in || !sess.refresh_token) return
-  const ms = (sess.expires_in - 120) * 1000
-  if (ms <= 0) return
-  refreshTimer = setTimeout(async () => {
+// 记录 access_token 过期时刻（Supabase 返回 expires_in 秒数）
+function stampExpiry(data) {
+  if (data && data.expires_in && !data.expires_at) {
+    data.expires_at = Date.now() + data.expires_in * 1000
+  }
+  return data
+}
+
+// ---------------- 会话续期 ----------------
+
+let refreshing = null
+
+// 确保 access_token 有效：已过期则用 refresh_token 续期（并发安全）
+async function ensureFreshToken() {
+  if (!session || !session.refresh_token) return false
+  const now = Date.now()
+  const expiresAt = session.expires_at || 0
+  if (expiresAt && now < expiresAt - 60 * 1000) return true
+  if (refreshing) return refreshing
+  refreshing = (async () => {
     try {
       const data = await request('/auth/v1/token?grant_type=refresh_token', {
         method: 'POST',
         body: { refresh_token: session.refresh_token },
       })
-      saveSession({ ...session, ...data })
-      scheduleTokenRefresh(data)
-    } catch { /* 刷新失败则保持原会话 */ }
+      saveSession(stampExpiry({ ...session, ...data }))
+      scheduleTokenRefresh({ ...session, ...data })
+      return true
+    } catch {
+      return false
+    } finally {
+      refreshing = null
+    }
+  })()
+  return refreshing
+}
+
+// 刷新会话：未过期则定时续期；已过期则立即续期
+function scheduleTokenRefresh(sess) {
+  clearTokenRefresh()
+  if (!sess || !sess.expires_in || !sess.refresh_token) return
+  const expiresAt = sess.expires_at || (Date.now() + sess.expires_in * 1000)
+  const ms = expiresAt - Date.now() - 120 * 1000
+  if (ms <= 0) {
+    ensureFreshToken()
+    return
+  }
+  refreshTimer = setTimeout(() => {
+    ensureFreshToken()
   }, ms)
 }
 
