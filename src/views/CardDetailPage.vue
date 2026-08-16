@@ -38,10 +38,10 @@
           <span class="meta-tag" v-if="cardData.suit">{{ cardData.suit }}</span>
         </div>
       </div>
-      <!-- Everyday Inspiration 入口 — 右下角 -->
+      <!-- 灵感暂存处 入口 — 右下角 -->
       <div class="inspiration-entry" @click="showInspirations = true">
         <span class="inspiration-star">✦</span>
-        <span class="inspiration-label">Everyday Inspiration</span>
+        <span class="inspiration-label">灵感暂存处</span>
         <span v-if="inspirationCount > 0" class="inspiration-badge">{{ inspirationCount }}</span>
       </div>
     </div>
@@ -306,7 +306,7 @@ function removeCustomImage() {
   flex-shrink: 0;
 }
 
-/* Everyday Inspiration 入口 — 右下角 */
+/* 灵感暂存处 入口 — 右下角（金框 + 光影） */
 .inspiration-entry {
   position: absolute;
   right: 0;
@@ -317,22 +317,45 @@ function removeCustomImage() {
   cursor: pointer;
   padding: 6px 14px 6px 10px;
   border-radius: 20px;
-  border: 1px solid var(--border-accent-light);
+  border: 1px solid var(--border-accent);
   background: var(--bg-panel);
+  box-shadow: 0 0 14px rgba(201, 169, 110, 0.16);
+  overflow: hidden;
   transition: all 0.35s ease;
 }
 
+/* 光影扫过 */
+.inspiration-entry::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(201, 169, 110, 0.14) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+
+.inspiration-entry:hover::before {
+  transform: translateX(100%);
+}
+
 .inspiration-entry:hover {
-  border-color: var(--border-accent);
-  box-shadow: 0 0 16px rgba(201, 169, 110, 0.18);
+  border-color: var(--text-accent);
+  box-shadow: 0 0 22px rgba(201, 169, 110, 0.32);
   transform: translateY(-2px);
 }
 
 .inspiration-star {
   font-size: 1rem;
-  color: var(--text-accent-dim);
+  color: var(--text-accent);
   transition: color 0.3s;
   line-height: 1;
+  animation: insp-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes insp-pulse {
+  0%, 100% { opacity: 0.55; text-shadow: none; }
+  50% { opacity: 1; text-shadow: 0 0 12px rgba(201, 169, 110, 0.7); }
 }
 
 .inspiration-entry:hover .inspiration-star {
