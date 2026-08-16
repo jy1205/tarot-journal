@@ -2,6 +2,11 @@
   <Teleport to="body">
     <div class="modal-overlay" @click.self="close">
       <div class="modal-stage">
+        <div class="stage-title">
+          <span class="stage-title-icon">✦</span>
+          <span class="stage-title-text">灵感暂存处</span>
+          <span class="stage-title-icon">✦</span>
+        </div>
         <!-- 走马灯卡片区 -->
         <div
           class="cards-track"
@@ -36,26 +41,13 @@
                 />
               </div>
 
-              <!-- 每日灵感 -->
+              <!-- 记录内容（合并显示，编辑时统一写入） -->
               <div class="card-section">
-                <span class="section-label">每日灵感</span>
                 <textarea
                   class="card-input"
-                  v-model="card.morning"
-                  placeholder="今天感受到的灵感..."
-                  @input="onCardChange"
-                  @click.stop
-                ></textarea>
-              </div>
-
-              <!-- 夜间复盘 -->
-              <div class="card-section">
-                <span class="section-label">夜间复盘</span>
-                <textarea
-                  class="card-input"
-                  v-model="card.evening"
-                  placeholder="夜晚回顾今天的感悟..."
-                  @input="onCardChange"
+                  :value="getCardText(card)"
+                  @input="onTextInput(card, $event)"
+                  placeholder="记录此刻的灵感..."
                   @click.stop
                 ></textarea>
               </div>
@@ -75,7 +67,7 @@
         <div v-else class="empty-state">
           <div class="empty-card" @click="addCard">
             <span class="add-icon">+</span>
-            <p class="empty-text">开始记录 Everyday Inspiration</p>
+            <p class="empty-text">开始记录灵感暂存处</p>
           </div>
         </div>
 
@@ -123,6 +115,21 @@ function onCardChange() {
   saveTimer = setTimeout(() => {
     persist()
   }, 500)
+}
+
+// 合并显示内容：morning + evening（历史数据兼容）
+function getCardText(card) {
+  const parts = []
+  if (card.morning) parts.push(card.morning)
+  if (card.evening) parts.push(card.evening)
+  return parts.join('\n\n')
+}
+
+// 编辑时统一写入 morning，清空 evening（不再区分早晚）
+function onTextInput(card, e) {
+  card.morning = e.target.value
+  card.evening = ''
+  onCardChange()
 }
 
 // 添加卡片
@@ -199,6 +206,24 @@ function close() {
   gap: 20px;
   max-width: 95vw;
   width: 700px;
+}
+
+/* 弹窗标题 */
+.stage-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.stage-title-icon {
+  font-size: 0.85rem;
+  color: var(--text-accent-dim);
+}
+
+.stage-title-text {
+  font-size: 1.05rem;
+  color: var(--text-accent);
+  letter-spacing: 0.18em;
 }
 
 /* 卡片轨道 */
@@ -351,16 +376,6 @@ function close() {
   flex: 1;
   min-height: 0;
   margin-bottom: 6px;
-}
-
-.section-label {
-  font-size: 0.65rem;
-  color: rgba(139, 107, 62, 0.45);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-  flex-shrink: 0;
-  padding-left: 2px;
 }
 
 /* 文字输入区域 */
