@@ -228,10 +228,30 @@ export async function syncNow() {
   return pushAllToCloud()
 }
 
-// 初始化：恢复会话 + 若已登录自动续期
+// 已登录时自动从云端拉取（打开页面 / 回到前台时调用，带防抖）
+let autoPullTimer = null
+function autoPullIfLoggedIn(delay = 3000) {
+  if (!isLoggedIn()) return
+  clearTimeout(autoPullTimer)
+  autoPullTimer = setTimeout(() => {
+    pullAllFromCloud().catch(() => {})
+  }, delay)
+}
+
+// 回到前台时自动拉取（如 AI 代笔写入云端后，切回页面即见）
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      autoPullIfLoggedIn(1500)
+    }
+  })
+}
+
+// 初始化：恢复会话 + 若已登录自动续期 + 自动拉取一次云端
 export function initCloudSync() {
   if (session) {
     scheduleTokenRefresh(session)
+    autoPullIfLoggedIn()
     return true
   }
   return false
