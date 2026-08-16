@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# 含 AI 写入密钥，仅限本地使用，勿提交
+supabase_ai_write.sql
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
